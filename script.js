@@ -38,7 +38,7 @@ function initGame() {
     ];
     direction = "RIGHT";
     score = 0;
-    currentSpeed = 300; // Tốc độ khởi đầu
+    currentSpeed = 210; // Tốc độ khởi đầu
     
     if (scoreElement) scoreElement.innerText = score;
     
