@@ -9,18 +9,28 @@ const restartBtn = document.getElementById("restartBtn");
 const box = 20;
 let snake, food, direction, score, gameLoop;
 
-// Lấy High Score từ Local Storage (nếu chưa có thì mặc định là 0)
-let highScore = localStorage.getItem("snakeHighScore") || 0;
-highScoreElement.innerText = highScore;
+// --- CẤU HÌNH TỐC ĐỘ ---
+let currentSpeed;
+const minSpeed = 50; // Giới hạn tốc độ tối đa (nhanh nhất)
+const speedDecreaseStep = 5; // Mỗi lần ăn táo sẽ giảm đi 5ms
 
+// --- CẤU HÌNH HIGH SCORE ---
+let highScore = localStorage.getItem("snakeHighScore") || 0;
+if (highScoreElement) highScoreElement.innerText = highScore;
+
+// --- KHỞI TẠO GAME ---
 function initGame() {
-    gameOverScreen.classList.add("hidden");
+    // Ẩn màn hình Game Over và reset UI
+    if (gameOverScreen) gameOverScreen.classList.add("hidden");
+    if (finalScoreElement) finalScoreElement.classList.remove("new-record");
     
-    // Reset lại style nếu ván trước vừa phá kỷ lục
-    finalScoreElement.classList.remove("new-record");
-    document.querySelector("#gameOverScreen h3").innerText = "GAME OVER!";
-    document.querySelector("#gameOverScreen h3").style.color = "#ff3b30";
+    let gameOverTitle = document.querySelector("#gameOverScreen h3");
+    if (gameOverTitle) {
+        gameOverTitle.innerText = "GAME OVER!";
+        gameOverTitle.style.color = "#ff3b30";
+    }
     
+    // Thiết lập trạng thái ban đầu
     snake = [
         { x: 10 * box, y: 10 * box },
         { x: 9 * box, y: 10 * box },
@@ -28,37 +38,46 @@ function initGame() {
     ];
     direction = "RIGHT";
     score = 0;
-    scoreElement.innerText = score;
+    currentSpeed = 300; // Tốc độ khởi đầu
+    
+    if (scoreElement) scoreElement.innerText = score;
     
     spawnFood();
     
+    // Khởi động vòng lặp game
     if (gameLoop) clearInterval(gameLoop);
-    gameLoop = setInterval(drawGame, 120);
+    gameLoop = setInterval(drawGame, currentSpeed);
 }
 
+// --- TẠO THỨC ĂN MỚI ---
 function spawnFood() {
     food = {
         x: Math.floor(Math.random() * (canvas.width / box)) * box,
         y: Math.floor(Math.random() * (canvas.height / box)) * box
     };
+    
+    // Đảm bảo táo không sinh ra đè lên thân rắn
     if (snake.some(segment => segment.x === food.x && segment.y === food.y)) {
         spawnFood();
     }
 }
 
+// --- ĐIỀU KHIỂN BẰNG BÀN PHÍM ---
 document.addEventListener("keydown", (event) => {
     if ((event.key === "ArrowLeft" || event.key === "a") && direction !== "RIGHT") direction = "LEFT";
     else if ((event.key === "ArrowUp" || event.key === "w") && direction !== "DOWN") direction = "UP";
     else if ((event.key === "ArrowRight" || event.key === "d") && direction !== "LEFT") direction = "RIGHT";
     else if ((event.key === "ArrowDown" || event.key === "s") && direction !== "UP") direction = "DOWN";
     
-    if (event.key === " " && !gameOverScreen.classList.contains("hidden")) {
+    // Bấm Space để chơi lại nhanh khi đang ở màn hình Game Over
+    if (event.key === " " && gameOverScreen && !gameOverScreen.classList.contains("hidden")) {
         initGame();
     }
 });
 
-restartBtn.addEventListener("click", initGame);
+if (restartBtn) restartBtn.addEventListener("click", initGame);
 
+// --- CÁC HÀM HỖ TRỢ VẼ ĐỒ HOẠ ---
 function drawRoundedRect(x, y, width, height, radius, color) {
     ctx.fillStyle = color;
     ctx.beginPath();
@@ -86,17 +105,21 @@ function drawEyes(headX, headY) {
         eye2X = headX + 15; eye2Y = headY + 14;
     }
 
+    // Vẽ tròng trắng
     ctx.beginPath(); ctx.arc(eye1X, eye1Y, eyeSize, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(eye2X, eye2Y, eyeSize, 0, Math.PI * 2); ctx.fill();
     
+    // Vẽ tròng đen
     ctx.fillStyle = "black";
     ctx.beginPath(); ctx.arc(eye1X, eye1Y, pupilSize, 0, Math.PI * 2); ctx.fill();
     ctx.beginPath(); ctx.arc(eye2X, eye2Y, pupilSize, 0, Math.PI * 2); ctx.fill();
 }
 
+// --- VÒNG LẶP CHÍNH CỦA GAME ---
 function drawGame() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+    // 1. Vẽ táo (thức ăn)
     const centerX = food.x + box / 2;
     const centerY = food.y + box / 2;
     
@@ -110,9 +133,10 @@ function drawGame() {
     ctx.shadowBlur = 0;
     ctx.fillStyle = "#4caf50"; 
     ctx.beginPath();
-    ctx.ellipse(centerX + 3, centerY - 6, 4, 2, Math.PI / 4, 0, Math.PI * 2);
+    ctx.ellipse(centerX + 3, centerY - 6, 4, 2, Math.PI / 4, 0, Math.PI * 2); // Cuống lá
     ctx.fill();
 
+    // 2. Vẽ rắn
     for (let i = 0; i < snake.length; i++) {
         let padding = 1; 
         if (i === 0) {
@@ -123,6 +147,7 @@ function drawGame() {
         }
     }
 
+    // 3. Tính toán toạ độ đầu rắn tiếp theo
     let snakeX = snake[0].x;
     let snakeY = snake[0].y;
 
@@ -131,6 +156,7 @@ function drawGame() {
     if (direction === "RIGHT") snakeX += box;
     if (direction === "DOWN") snakeY += box;
 
+    // 4. Kiểm tra va chạm (Thua game)
     if (
         snakeX < 0 || 
         snakeX >= canvas.width || 
@@ -140,33 +166,47 @@ function drawGame() {
     ) {
         clearInterval(gameLoop);
         
-        // --- XỬ LÝ LƯU HIGH SCORE KHI GAME OVER ---
+        // --- Logic lưu High Score ---
         if (score > highScore) {
             highScore = score;
             localStorage.setItem("snakeHighScore", highScore);
-            highScoreElement.innerText = highScore;
+            if (highScoreElement) highScoreElement.innerText = highScore;
             
-            // Đổi giao diện chúc mừng kỷ lục mới
-            document.querySelector("#gameOverScreen h3").innerText = "🏆 NEW HIGH SCORE! 🏆";
-            document.querySelector("#gameOverScreen h3").style.color = "#ffeb3b";
-            finalScoreElement.classList.add("new-record");
+            // UI cho kỷ lục mới
+            let gameOverTitle = document.querySelector("#gameOverScreen h3");
+            if (gameOverTitle) {
+                gameOverTitle.innerText = "🏆 NEW HIGH SCORE! 🏆";
+                gameOverTitle.style.color = "#ffeb3b";
+            }
+            if (finalScoreElement) finalScoreElement.classList.add("new-record");
         }
         
-        finalScoreElement.innerText = score;
-        gameOverScreen.classList.remove("hidden");
-        return;
+        // Hiện màn hình Game Over
+        if (finalScoreElement) finalScoreElement.innerText = score;
+        if (gameOverScreen) gameOverScreen.classList.remove("hidden");
+        return; // Dừng hàm tại đây
     }
 
+    // 5. Xử lý ăn thức ăn và TĂNG TỐC ĐỘ
     if (snakeX === food.x && snakeY === food.y) {
         score += 10;
-        scoreElement.innerText = score;
+        if (scoreElement) scoreElement.innerText = score;
         spawnFood();
+        
+        // Logic tăng tốc độ
+        if (currentSpeed > minSpeed) {
+            currentSpeed -= speedDecreaseStep; 
+            clearInterval(gameLoop); 
+            gameLoop = setInterval(drawGame, currentSpeed); // Cập nhật lại tốc độ mới
+        }
     } else {
-        snake.pop(); 
+        snake.pop(); // Xoá đuôi nếu không ăn được mồi
     }
 
+    // 6. Cập nhật vị trí đầu rắn
     let newHead = { x: snakeX, y: snakeY };
     snake.unshift(newHead);
 }
 
+// Chạy game ngay khi tải trang
 initGame();
