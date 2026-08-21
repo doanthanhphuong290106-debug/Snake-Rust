@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="snake_icon.png" type="image/jpeg">
-    <title>Modern Snake Game</title>
+    <link rel="icon" href="rat.svg" type="image/jpeg">
+    <title>Mouse Dash Game</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="game-container">
         <div class="header">
-            <h2>🐍 SNAKE RUSH</h2>
+            <h2>🐭 MOUSE DASH</h2>
             <div class="scores">
                 <div class="score-board">Score: <span id="score">0</span></div>
                 <div class="score-board high-score">Best: <span id="highScore">0</span></div>
@@ -21,7 +21,6 @@
         <div class="canvas-wrapper">
             <canvas id="gameCanvas" width="400" height="400"></canvas>
             
-            <!-- Màn hình Game Over tuỳ chỉnh -->
             <div id="gameOverScreen" class="overlay hidden">
                 <h3>GAME OVER!</h3>
                 <p>Điểm của bạn: <span id="finalScore">0</span></p>
